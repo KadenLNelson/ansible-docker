@@ -1,0 +1,38 @@
+---
+# - removes ec2 keys on AWS generated from `ec2-provisioner`
+# - removes ec2 keys on local file system generated from `ec2-provisioner`
+# - enumerates instances with `tag_Ansible_Docker` and terminates them
+
+- name: remove generated keypair from AWS cloud platform
+  ec2_key:
+    name: "{{ ec2_key_name }}"
+    region: "{{ ec2_region }}"
+    state: absent
+
+- name: remove generated keypair from file system
+  file:
+    path: "{{ ec2_key_output_path }}"
+    state: absent
+
+- name: enumerate facts about ec2 instances tagged with `tag_Ansible_Docker`
+  ec2_instance_facts:
+    region: "{{ ec2_region }}"
+    filters:
+      "tag:Ansible": Docker
+
+  register: instance_facts
+
+- name: extract instance ids from enumerated ec2 instance facts
+  set_fact:
+    ec2_instances: |
+      {% set instances = [] %}
+      {% for item in instance_facts.instances -%}
+        {{ instances.append(item.instance_id) }}
+      {%- endfor %}
+      {{ instances }}
+
+- name: terminate provisioned ec2 instances with `tag_Ansible_Docker`
+  ec2:
+    region: "{{ ec2_region }}"
+    instance_ids: "{{ ec2_instances }}"
+    state: absent

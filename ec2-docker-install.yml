@@ -1,0 +1,10 @@
+---
+
+- name: install docker on provisioned ec2 instances with tag_Ansible_Docker
+  hosts: tag_Ansible_Docker
+  key_file: {{ ec2_key_output_path }}
+  remote_user: ubuntu
+  become: yes
+  become_user: root
+  roles:
+    - ubuntu-bionic-docker

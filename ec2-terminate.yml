@@ -1,0 +1,9 @@
+---
+
+- name: terminate ec2 instances tagged with tag_Ansible_Docker
+  hosts: localhost
+  connection: local
+  gather_facts: no
+
+  roles:
+    - ec2-terminator

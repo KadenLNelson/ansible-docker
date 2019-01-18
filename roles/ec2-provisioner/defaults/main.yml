@@ -1,0 +1,8 @@
+ec2_key_output_path: "./ansible-docker.pem"
+ec2_region: "us-west-1"
+ec2_ami_id: "ami-063aa838bd7631e0b"
+ec2_instance_type: "t2.medium"
+
+ec2_key_name: "ansible-docker"
+ec2_vpc_name: "ansible-docker"
+ec2_security_group_name: "ansible-docker"

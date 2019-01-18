@@ -1,0 +1,64 @@
+---
+# configure an AWS sandbox ec2 for `ansible-docker`
+
+- name: create virtual private cloud
+  ec2_vpc_net:
+    name: "{{ ec2_security_group_name }}"
+    cidr_block: 192.168.0.0/24
+    region: "{{ ec2_region }}"
+  register: ec2_vpc
+
+- name: create vpc subnet
+  ec2_vpc_subnet:
+    state: present
+    vpc_id: "{{ ec2_vpc.vpc.id }}"
+    cidr: 192.168.0.0/24
+    region: "{{ ec2_region }}"
+  register: ec2_vpc_subnet
+
+- name: create security group
+  ec2_group:
+    name: ansible-docker
+    description: ansible-docker
+    region: "{{ ec2_region }}"
+    vpc_id: "{{ ec2_vpc.vpc.id}}"
+    rules:
+      - proto: tcp
+        ports:
+          - 22
+        cidr_ip: 0.0.0.0/0
+        rule_desc: allow all traffic open port 22
+  register: ec2_group
+
+- name: generate keypair
+  ec2_key:
+    name: "{{ ec2_key_name }}"
+    region: "{{ ec2_region }}"
+    force: false
+  register: ec2_key
+
+- name: save generated keypair to local file system
+  when: ec2_key.changed
+  copy:
+    content: "{{ ec2_key.key.private_key }}"
+    dest: "{{ ec2_key_output_path }}"
+    mode: 0600
+
+- name: provision ec2 instance with generated key
+  ec2:
+    assign_public_ip: yes
+    key_name: "{{ ec2_key_name }}"
+    instance_type: "{{ ec2_instance_type }}"
+    region: "{{ ec2_region }}"
+    image: "{{ ec2_ami_id }}"
+    vpc_subnet_id: "{{ ec2_vpc_subnet.subnet.id }}"
+    group_id: "{{ ec2_group.group_id }}"
+    wait: yes
+    exact_count: 1
+    count_tag:
+      Ansible: Docker
+    instance_tags:
+      Ansible: Docker
+    user_data: |
+      #!/usr/bin/env bash
+      sudo apt-get install -yq python

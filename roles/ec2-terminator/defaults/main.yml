@@ -1,0 +1,3 @@
+ec2_key_name: "ansible-docker"
+ec2_key_output_path: "./ansible-docker.pem"
+ec2_region: "us-west-1"
